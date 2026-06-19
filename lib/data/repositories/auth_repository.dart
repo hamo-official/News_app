@@ -107,4 +107,17 @@ class AuthRepository {
     await _client.from('profiles').upsert(data);
     return UserProfileModel.fromJson(data);
   }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final email = currentUser?.email;
+    if (email == null) {
+      throw Exception('Not signed in.');
+    }
+    // Re-authenticate to verify the current password before updating.
+    await _client.auth.signInWithPassword(email: email, password: currentPassword);
+    await _client.auth.updateUser(UserAttributes(password: newPassword));
+  }
 }

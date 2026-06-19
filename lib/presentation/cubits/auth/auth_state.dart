@@ -15,6 +15,11 @@ class AuthUnauthenticated extends AuthState {}
 
 class AuthEmailConfirmationRequired extends AuthState {}
 
+class PasswordChangeSuccess extends AuthState {
+  final UserProfileModel? profile;
+  PasswordChangeSuccess({this.profile});
+}
+
 class AuthError extends AuthState {
   final String message;
   AuthError(this.message);

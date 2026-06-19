@@ -58,8 +58,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       },
       builder: (context, state) {
-        final profile =
-            state is AuthAuthenticated ? state.profile : null;
+        final profile = state is AuthAuthenticated ? state.profile : null;
+        final isLoading = state is AuthLoading;
 
         return Scaffold(
           backgroundColor: AppColors.neutral,
@@ -72,7 +72,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: AppColors.textPrimary, size: 20),
             ),
             title: Text(
-              'My Profile',
+              'Profile',
               style: TextStyle(
                 color: AppColors.textPrimary,
                 fontSize: 18.sp,
@@ -80,32 +80,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             centerTitle: true,
-            actions: [
-              if (state is! AuthLoading)
-                TextButton(
-                  onPressed: () {
-                    if (_isEditing) {
-                      if (_formKey.currentState!.validate()) {
-                        context.read<AuthCubit>().updateProfile(
-                              fullName: _nameCtrl.text.trim(),
-                            );
-                      }
-                    } else {
-                      setState(() => _isEditing = true);
-                    }
-                  },
-                  child: Text(
-                    _isEditing ? 'Save' : 'Edit',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-            ],
           ),
-          body: state is AuthLoading
+          body: isLoading
               ? const Center(
                   child: CircularProgressIndicator(
                       color: AppColors.primary, strokeWidth: 2),
@@ -115,78 +91,132 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Form(
                     key: _formKey,
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Avatar
-                        Container(
-                          width: 88.w,
-                          height: 88.w,
-                          decoration: const BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Text(
-                              _initials(
-                                  profile?.fullName ?? profile?.email ?? 'U'),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 32.sp,
-                                fontWeight: FontWeight.w700,
+                        // Avatar + name + email
+                        Center(
+                          child: Column(
+                            children: [
+                              Container(
+                                width: 88.w,
+                                height: 88.w,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.primary,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    _initials(
+                                        profile?.fullName ?? profile?.email ?? 'U'),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 32.sp,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 8.h),
-                        Text(
-                          profile?.email ?? '',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 13.sp,
+                              SizedBox(height: 12.h),
+                              Text(
+                                profile?.fullName?.isNotEmpty == true
+                                    ? profile!.fullName!
+                                    : 'Not set',
+                                style: TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              SizedBox(height: 4.h),
+                              Text(
+                                profile?.email ?? '',
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 13.sp,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         SizedBox(height: 32.h),
-                        // Full name tile
-                        _profileTile(
-                          label: 'Full Name',
-                          value: profile?.fullName ?? 'Not set',
-                          isEditing: _isEditing,
-                          controller: _nameCtrl,
-                          validator: (v) => (v == null || v.isEmpty)
-                              ? 'Enter your name'
-                              : null,
-                        ),
-                        SizedBox(height: 16.h),
-                        // Email tile (read-only)
-                        _profileTile(
-                          label: 'Email',
-                          value: profile?.email ?? '',
-                          isEditing: false,
-                        ),
-                        SizedBox(height: 40.h),
-                        // Sign out
-                        SizedBox(
-                          width: double.infinity,
-                          height: 52.h,
-                          child: OutlinedButton(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.tertiary,
-                              side: const BorderSide(
-                                  color: AppColors.tertiary),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14.r),
-                              ),
+                        _sectionLabel('Personal Information'),
+                        SizedBox(height: 12.h),
+                        _groupedCard(
+                          children: [
+                            _infoTile(
+                              icon: Icons.person_outline,
+                              label: 'Full Name',
+                              isEditing: _isEditing,
+                              controller: _nameCtrl,
+                              value: profile?.fullName?.isNotEmpty == true
+                                  ? profile!.fullName!
+                                  : 'Not set',
+                              validator: (v) => (v == null || v.isEmpty)
+                                  ? 'Enter your name'
+                                  : null,
                             ),
-                            onPressed: () =>
-                                context.read<AuthCubit>().signOut(),
-                            child: Text(
-                              'Sign Out',
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.w600,
-                              ),
+                            _divider(),
+                            _infoTile(
+                              icon: Icons.cake_outlined,
+                              label: 'Age',
+                              isEditing: false,
+                              value: 'Not set',
                             ),
-                          ),
+                            _divider(),
+                            _infoTile(
+                              icon: Icons.public_outlined,
+                              label: 'Country',
+                              isEditing: false,
+                              value: 'Not set',
+                            ),
+                            _divider(),
+                            _infoTile(
+                              icon: Icons.mail_outline,
+                              label: 'Email',
+                              isEditing: false,
+                              value: profile?.email ?? '',
+                            ),
+                          ],
                         ),
+                        SizedBox(height: 24.h),
+                        _sectionLabel('Account'),
+                        SizedBox(height: 12.h),
+                        _groupedCard(
+                          children: [
+                            _actionTile(
+                              icon: Icons.edit_outlined,
+                              label: _isEditing ? 'Save Profile' : 'Edit Profile',
+                              onTap: () {
+                                if (_isEditing) {
+                                  if (_formKey.currentState!.validate()) {
+                                    context.read<AuthCubit>().updateProfile(
+                                          fullName: _nameCtrl.text.trim(),
+                                        );
+                                  }
+                                } else {
+                                  setState(() => _isEditing = true);
+                                }
+                              },
+                            ),
+                            _divider(),
+                            _actionTile(
+                              icon: Icons.lock_outline,
+                              label: 'Change Password',
+                              onTap: () =>
+                                  context.push(AppRouter.changePassword),
+                            ),
+                            _divider(),
+                            _actionTile(
+                              icon: Icons.logout,
+                              label: 'Logout',
+                              color: AppColors.tertiary,
+                              showChevron: false,
+                              onTap: () =>
+                                  context.read<AuthCubit>().signOut(),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 32.h),
                       ],
                     ),
                   ),
@@ -196,64 +226,133 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _profileTile({
+  Widget _sectionLabel(String text) {
+    return Text(
+      text.toUpperCase(),
+      style: TextStyle(
+        color: AppColors.textSecondary,
+        fontSize: 12.sp,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.6,
+      ),
+    );
+  }
+
+  Widget _groupedCard({required List<Widget> children}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _divider() => Divider(
+        height: 1,
+        thickness: 1,
+        indent: 52.w,
+        color: AppColors.divider,
+      );
+
+  Widget _infoTile({
+    required IconData icon,
     required String label,
     required String value,
     required bool isEditing,
     TextEditingController? controller,
     String? Function(String?)? validator,
   }) {
-    return Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+      child: Row(
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w500,
+          Icon(icon, size: 20.sp, color: AppColors.primary),
+          SizedBox(width: 14.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                if (isEditing && controller != null)
+                  TextFormField(
+                    controller: controller,
+                    validator: validator,
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    decoration: const InputDecoration(
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                      border: InputBorder.none,
+                    ),
+                  )
+                else
+                  Text(
+                    value,
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+              ],
             ),
           ),
-          SizedBox(height: 6.h),
-          if (isEditing && controller != null)
-            TextFormField(
-              controller: controller,
-              validator: validator,
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w500,
-              ),
-              decoration: const InputDecoration(
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-                border: InputBorder.none,
-              ),
-            )
-          else
-            Text(
-              value,
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w500,
+        ],
+      ),
+    );
+  }
+
+  Widget _actionTile({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color color = AppColors.textPrimary,
+    bool showChevron = true,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
+        child: Row(
+          children: [
+            Icon(icon, size: 20.sp,
+                color: color == AppColors.textPrimary ? AppColors.primary : color),
+            SizedBox(width: 14.w),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15.sp,
+                  color: color,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-        ],
+            if (showChevron)
+              Icon(Icons.chevron_right, size: 20.sp,
+                  color: AppColors.textSecondary),
+          ],
+        ),
       ),
     );
   }
 
   String _initials(String name) {
     final parts = name.trim().split(' ');
-    if (parts.isEmpty) return 'U';
+    if (parts.isEmpty || parts.first.isEmpty) return 'U';
     if (parts.length == 1) return parts[0][0].toUpperCase();
     return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
   }

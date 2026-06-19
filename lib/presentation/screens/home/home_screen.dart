@@ -18,6 +18,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
@@ -46,13 +47,120 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
+      drawer: Drawer(
+        backgroundColor: AppColors.neutral,
+        child: SafeArea(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(
+                    horizontal: 20.w, vertical: 24.h),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44.w,
+                      height: 44.w,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(14.r),
+                      ),
+                      child: Icon(Icons.article_rounded,
+                          color: Colors.white, size: 24.sp),
+                    ),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'NovaNews',
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 18.sp,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          SizedBox(height: 4.h),
+                          Text(
+                            'Quick actions',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12.sp,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              BlocBuilder<AuthCubit, AuthState>(
+                builder: (context, state) {
+                  final isAuthenticated = state is AuthAuthenticated;
+                  return ListTile(
+                    leading: Icon(
+                      isAuthenticated
+                          ? Icons.settings_outlined
+                          : Icons.person_outline_rounded,
+                      color: AppColors.primary,
+                    ),
+                    title: Text(
+                      isAuthenticated ? 'Settings' : 'Sign In',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: isAuthenticated
+                        ? null
+                        : Text(
+                            'Access your account',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12.sp,
+                            ),
+                          ),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      if (isAuthenticated) {
+                        context.push(AppRouter.settings);
+                      } else {
+                        context.push(AppRouter.login);
+                      }
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
       backgroundColor: AppColors.neutral,
       appBar: AppBar(
         backgroundColor: AppColors.neutral,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.menu_rounded, color: AppColors.textPrimary),
-          onPressed: () {},
+        elevation: 1,
+        leadingWidth: 64.w,
+        leading: Padding(
+          padding: EdgeInsets.only(left: 12.w),
+          child: Container(
+            width: 36.w,
+            height: 36.w,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.divider),
+            ),
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              splashRadius: 18.r,
+              icon: const Icon(Icons.menu_rounded,
+                  color: AppColors.textPrimary, size: 20),
+              onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+            ),
+          ),
         ),
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -97,21 +205,6 @@ class _HomeScreenState extends State<HomeScreen> {
               });
             },
           ),
-          BlocBuilder<AuthCubit, AuthState>(
-            builder: (context, state) {
-              return IconButton(
-                icon: const Icon(Icons.person_outline_rounded,
-                    color: AppColors.textPrimary),
-                onPressed: () {
-                  if (state is AuthAuthenticated) {
-                    context.push(AppRouter.profile);
-                  } else {
-                    context.push(AppRouter.login);
-                  }
-                },
-              );
-            },
-          ),
         ],
       ),
       body: Column(
@@ -142,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
             )
           else
             Padding(
-              padding: EdgeInsets.fromLTRB(50.w, 8.h, 25.w, 0),
+              padding: EdgeInsets.fromLTRB(75.w, 8.h, 25.w, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -155,17 +248,20 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   Padding(
-                    padding: EdgeInsets.fromLTRB(50.w, 8.h/, 25.w, 0),
+                    padding: EdgeInsets.fromLTRB(75.w, 2.h, 25.w, 0),
                     child: SizedBox(height: 10.h,),
                   ),
                   Text(
-                    '   Curated insights for the modern \nprofessional. Stay ahead of the curve.',
+                    '   Curated insights for the modern ',
                     style: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 13.sp,
                     ),
                   ),
-                ],
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text("professional. Stay ahead of the curve.",style:TextStyle(color: AppColors.textSecondary,fontSize: 13.sp) ,),
+                )],
               ),
             ),
           SizedBox(height: 16.h),

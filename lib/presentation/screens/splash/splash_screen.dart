@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/router/app_router.dart';
+import '../onboarding/onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -40,7 +42,14 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
     final isLoggedIn =
         Supabase.instance.client.auth.currentUser != null;
-    context.go(isLoggedIn ? AppRouter.home : AppRouter.login);
+    if (isLoggedIn) {
+      context.go(AppRouter.home);
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final seenOnboarding = prefs.getBool(OnboardingScreen.seenKey) ?? false;
+    if (!mounted) return;
+    context.go(seenOnboarding ? AppRouter.login : AppRouter.onboarding);
   }
 
   @override

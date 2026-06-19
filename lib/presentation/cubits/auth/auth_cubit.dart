@@ -82,6 +82,24 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final current = state;
+    final profile = current is AuthAuthenticated ? current.profile : null;
+    emit(AuthLoading());
+    try {
+      await _authRepo.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+      emit(PasswordChangeSuccess(profile: profile));
+    } catch (e) {
+      emit(AuthError(_parseError(e.toString())));
+    }
+  }
+
   String _parseError(String error) {
     if (error.contains('Invalid login credentials') ||
         error.contains('invalid_credentials')) {
