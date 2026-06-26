@@ -8,6 +8,7 @@ import '../../cubits/auth/auth_cubit.dart';
 import '../../cubits/auth/auth_state.dart';
 import '../../cubits/news/news_cubit.dart';
 import '../../cubits/news/news_state.dart';
+import '../../widgets/app_bottom_nav.dart';
 import 'widgets/news_card.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -44,101 +45,20 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  String _initials(String name) {
+    final parts = name.trim().split(' ');
+    if (parts.isEmpty || parts.first.isEmpty) return 'U';
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      drawer: Drawer(
-        backgroundColor: AppColors.neutral,
-        child: SafeArea(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              Container(
-                padding: EdgeInsets.symmetric(
-                    horizontal: 20.w, vertical: 24.h),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 44.w,
-                      height: 44.w,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(14.r),
-                      ),
-                      child: Icon(Icons.article_rounded,
-                          color: Colors.white, size: 24.sp),
-                    ),
-                    SizedBox(width: 12.w),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'NovaNews',
-                            style: TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 18.sp,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          SizedBox(height: 4.h),
-                          Text(
-                            'Quick actions',
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 12.sp,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              BlocBuilder<AuthCubit, AuthState>(
-                builder: (context, state) {
-                  final isAuthenticated = state is AuthAuthenticated;
-                  return ListTile(
-                    leading: Icon(
-                      isAuthenticated
-                          ? Icons.settings_outlined
-                          : Icons.person_outline_rounded,
-                      color: AppColors.primary,
-                    ),
-                    title: Text(
-                      isAuthenticated ? 'Settings' : 'Sign In',
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 15.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    subtitle: isAuthenticated
-                        ? null
-                        : Text(
-                            'Access your account',
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 12.sp,
-                            ),
-                          ),
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      if (isAuthenticated) {
-                        context.push(AppRouter.settings);
-                      } else {
-                        context.push(AppRouter.login);
-                      }
-                    },
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
+      drawer: _buildDrawer(context),
       backgroundColor: AppColors.neutral,
+      bottomNavigationBar: const AppBottomNav(currentIndex: 0),
       appBar: AppBar(
         backgroundColor: AppColors.neutral,
         elevation: 1,
@@ -188,6 +108,36 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         centerTitle: true,
         actions: [
+          BlocBuilder<AuthCubit, AuthState>(
+            builder: (context, state) {
+              if (state is AuthAuthenticated) {
+                return GestureDetector(
+                  onTap: () => context.go(AppRouter.profile),
+                  child: Padding(
+                    padding: EdgeInsets.only(right: 12.w),
+                    child: CircleAvatar(
+                      radius: 16.r,
+                      backgroundColor: AppColors.primary,
+                      child: Text(
+                        _initials(state.profile?.fullName ??
+                            state.profile?.email ?? 'U'),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }
+              return IconButton(
+                icon: const Icon(Icons.person_outline_rounded,
+                    color: AppColors.textPrimary),
+                onPressed: () => context.push(AppRouter.login),
+              );
+            },
+          ),
           IconButton(
             icon: Icon(
               _isSearching
@@ -235,33 +185,27 @@ class _HomeScreenState extends State<HomeScreen> {
             )
           else
             Padding(
-              padding: EdgeInsets.fromLTRB(75.w, 8.h, 25.w, 0),
+              padding: EdgeInsets.fromLTRB(24.w, 12.h, 24.w, 0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'The Morning Brief',
                     style: TextStyle(
                       color: AppColors.textPrimary,
-                      fontSize: 14.sp,
+                      fontSize: 20.sp,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(75.w, 2.h, 25.w, 0),
-                    child: SizedBox(height: 10.h,),
-                  ),
+                  SizedBox(height: 4.h),
                   Text(
-                    '   Curated insights for the modern ',
+                    'Curated insights for the modern professional.',
                     style: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 13.sp,
                     ),
                   ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text("professional. Stay ahead of the curve.",style:TextStyle(color: AppColors.textSecondary,fontSize: 13.sp) ,),
-                )],
+                ],
               ),
             ),
           SizedBox(height: 16.h),
@@ -301,8 +245,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
                           ),
-                          onPressed: () =>
-                              context.read<NewsCubit>().loadNews(refresh: true),
+                          onPressed: () => context
+                              .read<NewsCubit>()
+                              .loadNews(refresh: true),
                           child: const Text('Retry'),
                         ),
                       ],
@@ -341,7 +286,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: ListView.builder(
                       controller: _scrollController,
                       padding: EdgeInsets.symmetric(horizontal: 16.w),
-                      itemCount: state.news.length + (state.hasMore ? 1 : 0),
+                      itemCount:
+                          state.news.length + (state.hasMore ? 1 : 0),
                       itemBuilder: (context, index) {
                         if (index == state.news.length) {
                           return Padding(
@@ -360,8 +306,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           isSaved: state.savedIds.contains(news.id),
                           onTap: () =>
                               context.push(AppRouter.newsDetail, extra: news),
-                          onSave: () =>
-                              context.read<NewsCubit>().toggleSave(news.id),
+                          onSave: () => context
+                              .read<NewsCubit>()
+                              .toggleSave(news.id),
                         );
                       },
                     ),
@@ -377,6 +324,182 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildDrawer(BuildContext context) {
+    return Drawer(
+      backgroundColor: Colors.white,
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            BlocBuilder<AuthCubit, AuthState>(
+              builder: (context, state) {
+                final profile =
+                    state is AuthAuthenticated ? state.profile : null;
+                final name = profile?.fullName?.isNotEmpty == true
+                    ? profile!.fullName!
+                    : 'Guest';
+                final email = profile?.email ?? '';
+                final isAuth = state is AuthAuthenticated;
+
+                return Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(
+                      horizontal: 20.w, vertical: 24.h),
+                  decoration: const BoxDecoration(
+                    color: AppColors.textPrimary,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CircleAvatar(
+                        radius: 32.r,
+                        backgroundColor: AppColors.primary,
+                        child: Text(
+                          _initials(
+                              profile?.fullName ?? profile?.email ?? 'G'),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22.sp,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 12.h),
+                      Text(
+                        isAuth ? name : 'Welcome!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 17.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      if (isAuth && email.isNotEmpty) ...[
+                        SizedBox(height: 2.h),
+                        Text(
+                          email,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            fontSize: 13.sp,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              },
+            ),
+            SizedBox(height: 8.h),
+            // Menu items
+            _drawerItem(
+              icon: Icons.person_outline_rounded,
+              label: 'Profile',
+              onTap: () {
+                Navigator.of(context).pop();
+                context.go(AppRouter.profile);
+              },
+            ),
+            _drawerDivider(),
+            _drawerItem(
+              icon: Icons.settings_outlined,
+              label: 'Settings',
+              onTap: () {
+                Navigator.of(context).pop();
+                context.go(AppRouter.settings);
+              },
+            ),
+            _drawerDivider(),
+            BlocBuilder<AuthCubit, AuthState>(
+              builder: (context, state) {
+                final isAuth = state is AuthAuthenticated;
+                if (isAuth) {
+                  return _drawerItem(
+                    icon: Icons.logout_rounded,
+                    label: 'Logout',
+                    color: AppColors.tertiary,
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      context.read<AuthCubit>().signOut();
+                    },
+                  );
+                }
+                return _drawerItem(
+                  icon: Icons.login_rounded,
+                  label: 'Sign In',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    context.push(AppRouter.login);
+                  },
+                );
+              },
+            ),
+            const Spacer(),
+            Padding(
+              padding: EdgeInsets.symmetric(
+                  horizontal: 20.w, vertical: 16.h),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36.w,
+                    height: 36.w,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                    child: Icon(Icons.article_rounded,
+                        color: Colors.white, size: 20.sp),
+                  ),
+                  SizedBox(width: 10.w),
+                  Text(
+                    'NovaNews',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _drawerItem({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color color = AppColors.textPrimary,
+  }) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: color == AppColors.textPrimary ? AppColors.primary : color,
+        size: 22.sp,
+      ),
+      title: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 15.sp,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      onTap: onTap,
+      contentPadding:
+          EdgeInsets.symmetric(horizontal: 20.w, vertical: 2.h),
+    );
+  }
+
+  Widget _drawerDivider() => Divider(
+        height: 1,
+        thickness: 1,
+        indent: 20.w,
+        endIndent: 20.w,
+        color: AppColors.divider,
+      );
+
   Widget _buildEmptyState(String message) {
     return Center(
       child: Column(
@@ -387,8 +510,8 @@ class _HomeScreenState extends State<HomeScreen> {
           SizedBox(height: 16.h),
           Text(
             message,
-            style:
-                TextStyle(color: AppColors.textSecondary, fontSize: 16.sp),
+            style: TextStyle(
+                color: AppColors.textSecondary, fontSize: 16.sp),
           ),
         ],
       ),

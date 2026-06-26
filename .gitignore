@@ -43,3 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Working artifacts (design mockups & local verification screenshots)
+/_stitch_designs/
+/_screenshots/
