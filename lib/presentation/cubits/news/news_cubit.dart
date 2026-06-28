@@ -10,8 +10,17 @@ class NewsCubit extends Cubit<NewsState> {
 
   int _currentPage = 0;
   final List<NewsModel> _allNews = [];
+  String? _category;
 
   NewsCubit(this._newsRepo, this._authRepo) : super(NewsInitial());
+
+  /// Filter the feed by category. Pass null (or empty) for "All".
+  Future<void> selectCategory(String? category) async {
+    final normalized = (category == null || category.isEmpty) ? null : category;
+    if (normalized == _category) return;
+    _category = normalized;
+    await loadNews(refresh: true);
+  }
 
   Future<void> loadNews({bool refresh = false}) async {
     if (refresh) {
@@ -21,7 +30,8 @@ class NewsCubit extends Cubit<NewsState> {
     if (_currentPage == 0) emit(NewsLoading());
 
     try {
-      final news = await _newsRepo.fetchNews(page: _currentPage);
+      final news =
+          await _newsRepo.fetchNews(page: _currentPage, category: _category);
       // ignore: avoid_print
       print('[NewsCubit] fetched ${news.length} articles (page $_currentPage)');
       final savedIds = await _getSavedIds(); // safe — returns {} for guests
@@ -31,6 +41,7 @@ class NewsCubit extends Cubit<NewsState> {
         news: List.from(_allNews),
         savedIds: savedIds,
         hasMore: news.length == 10,
+        activeCategory: _category,
       ));
     } catch (e) {
       // ignore: avoid_print
@@ -50,7 +61,8 @@ class NewsCubit extends Cubit<NewsState> {
     if (current is! NewsLoaded || !current.hasMore) return;
 
     try {
-      final news = await _newsRepo.fetchNews(page: _currentPage);
+      final news =
+          await _newsRepo.fetchNews(page: _currentPage, category: _category);
       final savedIds = await _getSavedIds();
       _allNews.addAll(news);
       _currentPage++;

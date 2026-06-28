@@ -7,10 +7,12 @@ class NewsRepository {
 
   NewsRepository(this._client);
 
-  Future<List<NewsModel>> fetchNews({int page = 0}) async {
-    final response = await _client
-        .from('news')
-        .select()
+  Future<List<NewsModel>> fetchNews({int page = 0, String? category}) async {
+    var filter = _client.from('news').select();
+    if (category != null && category.isNotEmpty) {
+      filter = filter.eq('category', category);
+    }
+    final response = await filter
         .order('created_at', ascending: false)
         .range(page * _pageSize, (page + 1) * _pageSize - 1);
 

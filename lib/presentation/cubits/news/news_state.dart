@@ -11,21 +11,27 @@ class NewsLoaded extends NewsState {
   final Set<String> savedIds;
   final bool hasMore;
 
+  /// Currently selected category filter (null = "All").
+  final String? activeCategory;
+
   NewsLoaded({
     required this.news,
     required this.savedIds,
     this.hasMore = true,
+    this.activeCategory,
   });
 
   NewsLoaded copyWith({
     List<NewsModel>? news,
     Set<String>? savedIds,
     bool? hasMore,
+    String? activeCategory,
   }) {
     return NewsLoaded(
       news: news ?? this.news,
       savedIds: savedIds ?? this.savedIds,
       hasMore: hasMore ?? this.hasMore,
+      activeCategory: activeCategory ?? this.activeCategory,
     );
   }
 }
